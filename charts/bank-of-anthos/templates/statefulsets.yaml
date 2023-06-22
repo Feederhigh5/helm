@@ -1,4 +1,4 @@
-{{- range $statefulset := .Values.statefulset }}
+{{- range $statefulset := .Values.statefulsets }}
 kind: StatefulSet
 apiVersion: apps/v1
 metadata:

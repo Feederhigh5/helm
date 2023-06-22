@@ -36,7 +36,7 @@ statefulsets:
         - configMapRef:
             name: {{ $.Values.configMaps.environment.name }}
         - configMapRef:
-            name: {{ $.Values.accountsdb.config.name }}
+            name: {{ $.Values.configMaps.accountsdb.name }}
         - configMapRef:
             name: {{ $.Values.configMaps.demoData.name }}
       
