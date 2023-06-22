@@ -10,15 +10,24 @@ spec:
     matchLabels:
       app: {{ $deployment.app }}
       {{- include "bank-of-anthos.selectorLabels" $ | nindent 6 }}
+  {{- if $deployment.replicas }}
+  replicas: {{ $deployment.replicas }}
+  {{- end }}
   template:
     metadata:
       annotations:
-        checksum/config: {{ include (print $.Template.BasePath "/config.yaml") $ | sha256sum }}
+        checksum/config: {{ include (print $.Template.BasePath "/configmaps.yaml") $ | sha256sum }}
+        {{- if $deployment.podAnnotations }}
+        {{- toYaml $deployment.podAnnotations | nindent 8 }}
+        {{- end }}
       labels:
         app: {{ $deployment.app }}
         {{- include "bank-of-anthos.selectorLabels" $ | nindent 8 }}
     spec:
       serviceAccountName: {{ $deployment.serviceAccountName }}
+      {{- if $deployment.restartPolicy }}
+      {{ toYaml $deployment.restartPolicy | nindent 8 }}
+      {{- end }}
       securityContext:
         {{- toYaml $deployment.podSecurityContext | nindent 8 }}
       containers:
@@ -27,18 +36,20 @@ spec:
           securityContext:
             {{- toYaml $deployment.container.securityContext  | nindent 12 }}
           {{- end }}
-          image: {{ $deployment.container.image }}
+          image: {{ $deployment.container.image }}:{{ $.Values.appVersion }}
           {{- if $deployment.container.ports }}
           ports:
             {{- toYaml $deployment.container.ports | nindent 12 }}
           {{- end }}
+          {{- if $deployment.container.volumeMounts }}
           volumeMounts:
             {{- toYaml $deployment.container.volumeMounts | nindent 12 }}
+          {{- end }}
           {{- if $deployment.container.env }}
           env:
             {{- range $key, $val := $deployment.container.env }}
             - name: {{ $key }}
-              value: {{ $val }}
+              value: {{ tpl $val $ | quote }}
             {{- end }}
           {{- end }}
           {{- if $deployment.container.extraEnv }}
@@ -46,7 +57,7 @@ spec:
           {{- end }}
           {{- if $deployment.container.envFrom }}
           envFrom:
-            {{- toYaml $deployment.container.envFrom | nindent 12 }}
+            {{- tpl $deployment.container.envFrom $ | nindent 12 }}
           {{- end }}
           {{- if $deployment.container.livenessProbe }}
           livenessProbe:

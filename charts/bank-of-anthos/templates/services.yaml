@@ -1,0 +1,55 @@
+{{- range $statefulset := .Values.statefulsets }}
+{{- if $statefulset.service }}
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ $statefulset.service.name }}
+  labels:
+    {{- include "bank-of-anthos.labels" $ | nindent 4 }}
+    app: {{ $statefulset.app }}
+    {{- if $statefulset.additionalLabels }}
+    {{ toYaml $statefulset.additionalLabels | nindent 4 }}
+    {{- end }}
+spec:
+  {{- if $statefulset.service.type }}
+  type: {{ $statefulset.service.type }}}}
+  {{- end }}
+  ports:
+    {{ toYaml $statefulset.service.name | nindent 4 }}
+  selector:
+    {{- include "bank-of-anthos.selectorLabels" $ | nindent 4 }}
+    app: {{ $statefulset.app }}
+    {{- if $statefulset.additionalLabels }}
+    {{ toYaml $statefulset.additionalLabels | nindent 4 }}
+    {{- end }}
+{{- end }}
+---
+{{- end }}
+
+{{- range $deployment := .Values.deployments }}
+{{- if $deployment.service }}
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ $deployment.service.name }}
+  labels:
+    {{- include "bank-of-anthos.labels" $ | nindent 4 }}
+    app: {{ $deployment.app }}
+    {{- if $deployment.additionalLabels }}
+    {{ toYaml $deployment.additionalLabels | nindent 4 }}
+    {{- end }}
+spec:
+  {{- if $deployment.service.type }}
+  type: {{ $deployment.service.type }}}}
+  {{- end }}
+  ports:
+    {{ toYaml $deployment.service.name | nindent 4 }}
+  selector:
+    {{- include "bank-of-anthos.selectorLabels" $ | nindent 4 }}
+    app: {{ $deployment.app }}
+    {{- if $deployment.additionalLabels }}
+    {{ toYaml $deployment.additionalLabels | nindent 4 }}
+    {{- end }}
+{{- end }}
+---
+{{- end }}
