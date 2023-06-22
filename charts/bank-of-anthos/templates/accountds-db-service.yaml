@@ -1,0 +1,18 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: accounts-db
+  labels:
+    {{- include "bank-of-anthos.labels" . | nindent 4 }}
+    app: accounts-db
+    tier: db
+spec:
+  ports:
+    - port: {{ .Values.accountsdb.servicePort }}
+      name: tcp
+      targetPort: {{ .Values.accountsdb.port }}
+      protocol: TCP
+  selector:
+    {{- include "bank-of-anthos.selectorLabels" . | nindent 4 }}
+    app: accounts-db
+    tier: db

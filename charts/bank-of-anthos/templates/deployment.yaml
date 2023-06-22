@@ -1,0 +1,70 @@
+{{- range $deployment := .Values.deployments }}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ $deployment.name }}
+  labels:
+    {{- include "bank-of-anthos.labels" $ | nindent 4 }}
+spec:
+  selector:
+    matchLabels:
+      app: {{ $deployment.app }}
+      {{- include "bank-of-anthos.selectorLabels" $ | nindent 6 }}
+  template:
+    metadata:
+      annotations:
+        checksum/config: {{ include (print $.Template.BasePath "/config.yaml") $ | sha256sum }}
+      labels:
+        app: {{ $deployment.app }}
+        {{- include "bank-of-anthos.selectorLabels" $ | nindent 8 }}
+    spec:
+      serviceAccountName: {{ $deployment.serviceAccountName }}
+      securityContext:
+        {{- toYaml $deployment.podSecurityContext | nindent 8 }}
+      containers:
+        - name: {{ $deployment.container.name }}
+          {{- if $deployment.container.securityContext }}
+          securityContext:
+            {{- toYaml $deployment.container.securityContext  | nindent 12 }}
+          {{- end }}
+          image: {{ $deployment.container.image }}
+          {{- if $deployment.container.ports }}
+          ports:
+            {{- toYaml $deployment.container.ports | nindent 12 }}
+          {{- end }}
+          volumeMounts:
+            {{- toYaml $deployment.container.volumeMounts | nindent 12 }}
+          {{- if $deployment.container.env }}
+          env:
+            {{- range $key, $val := $deployment.container.env }}
+            - name: {{ $key }}
+              value: {{ $val }}
+            {{- end }}
+          {{- end }}
+          {{- if $deployment.container.extraEnv }}
+            {{- toYaml $deployment.container.extraEnv | nindent 12 }}
+          {{- end }}
+          {{- if $deployment.container.envFrom }}
+          envFrom:
+            {{- toYaml $deployment.container.envFrom | nindent 12 }}
+          {{- end }}
+          {{- if $deployment.container.livenessProbe }}
+          livenessProbe:
+          {{- toYaml $deployment.container.livenessProbe | nindent 12 }}
+          {{- end }}
+          {{- if $deployment.container.readinessProbe }}
+          readinessProbe:
+          {{- toYaml $deployment.container.readinessProbe | nindent 12 }}
+          {{- end }} 
+          {{- if $deployment.container.startupProbe }}
+          startupProbe:
+          {{- toYaml $deployment.container.startupProbe | nindent 12 }}
+          {{- end }}
+          resources:
+            {{- toYaml $deployment.container.resources | nindent 12 }}
+      {{- if $deployment.container.volumes }}
+      volumes:
+      {{- toYaml $deployment.volumes | nindent 8 }}
+      {{- end }} 
+---
+{{- end }}

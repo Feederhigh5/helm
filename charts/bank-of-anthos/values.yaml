@@ -1,0 +1,387 @@
+# Default values for bank-of-anthos.
+# This is a YAML-formatted file.
+# Declare variables to be passed into your templates.
+nameOverride: ""
+fullnameOverride: ""
+
+accountsdb:
+  image: gcr.io/bank-of-anthos-ci/accounts-db:v0.5.10
+  envFrom: |
+    - configMapRef:
+        name: {{ $.Values.config.environment.name }}
+    - configMapRef:
+        name: {{ $.Values.accountsdb.config.name }}
+    - configMapRef:
+        name: {{ $.Values.config.demoData.name }}
+  port: 5432
+  servicePort: 5432
+  resources:
+    requests:
+      cpu: 100m
+      memory: 128Mi
+    limits:
+      cpu: 250m
+      memory: 512Mi
+  config:
+    name: accounts-db-config
+    data:
+      POSTGRES_DB: accounts-db
+      POSTGRES_USER: accounts-admin
+      POSTGRES_PASSWORD: accounts-pwd
+      ACCOUNTS_DB_URI: postgresql://accounts-admin:accounts-pwd@accounts-db:5432/accounts-db
+
+
+deployments:
+  balance-reader:
+    name: balancereader
+    app: balancereader
+    
+    serviceAccountName: default
+    
+    terminationGracePeriodSeconds: 5
+    
+    podSecurityContext:
+      fsGroup: 1000
+      runAsGroup: 1000
+      runAsNonRoot: true
+      runAsUser: 1000
+    
+    container:
+      name: balancereader
+      
+      securityContext:
+        allowPrivilegeEscalation: false
+        capabilities:
+          drop:
+            - all
+        privileged: false
+        readOnlyRootFilesystem: true
+      
+      image: gcr.io/bank-of-anthos-ci/balancereader:v0.5.10
+      
+      ports:
+        - name: http
+          containerPort: 5555
+          protocol: TCP
+
+      volumeMounts:
+        - name: publickey
+          mountPath: "/tmp/.ssh"
+          readOnly: true
+        - mountPath: /tmp
+          name: tmp
+      
+      # envs are inserted as name/value pairs
+      env:
+        VERSION: "v0.5.10"
+        PORT: "8080"
+        # toggle Cloud Trace export
+        ENABLE_TRACING: "false"
+        ENABLE_METRICS: "false"
+        POLL_MS: "100"
+        CACHE_SIZE: "1000000"
+        # tell Java to obey container memory limits
+        JVM_OPTS: "-XX:+UnlockExperimentalVMOptions -XX:+UseCGroupMemoryLimitForHeap -Xms256m -Xmx512m"
+        # Valid levels are debug, info, warn, error, fatal.
+        # If no valid level is set, will default to info.
+        LOG_LEVEL: "info"
+      
+      # extraEnv are inserted directly as Yaml
+      extraEnv:
+        - name: NAMESPACE
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.namespace
+      
+      envFrom:
+        - configMapRef:
+            name: environment-config
+        # add ledger-db credentials from ConfigMap
+        - configMapRef:
+            name: ledger-db-config
+      
+      resources:
+        requests:
+          cpu: 100m
+          memory: 256Mi
+        limits:
+          cpu: 500m
+          memory: 512Mi
+      
+      readinessProbe:
+        httpGet:
+          path: /ready
+          port: 8080
+        initialDelaySeconds: 60
+        periodSeconds: 5
+        timeoutSeconds: 10
+      
+      livenessProbe:
+        httpGet:
+          path: /healthy
+          port: 8080
+        initialDelaySeconds: 120
+        periodSeconds: 5
+        timeoutSeconds: 10
+      
+      startupProbe:
+        httpGet:
+          path: /healthy
+          port: 8080
+        failureThreshold: 30
+        periodSeconds: 10
+    
+    volumes:
+      - name: publickey
+        secret:
+          secretName: jwt-key
+          items:
+          - key: jwtRS256.key.pub
+            path: publickey
+      - emptyDir: {}
+        name: tmp
+  
+  contacts:
+    name: contacts
+    app: contacts
+    
+    serviceAccountName: default
+    
+    terminationGracePeriodSeconds: 5
+    
+    podSecurityContext:
+      fsGroup: 1000
+      runAsGroup: 1000
+      runAsNonRoot: true
+      runAsUser: 1000
+    
+    container:
+      name: balancereader
+      
+      securityContext:
+        allowPrivilegeEscalation: false
+        capabilities:
+          drop:
+            - all
+        privileged: false
+        readOnlyRootFilesystem: true
+      
+      image: gcr.io/bank-of-anthos-ci/balancereader:v0.5.10
+      
+      ports:
+        - name: http
+          containerPort: 5555
+          protocol: TCP
+
+      volumeMounts:
+        - name: publickey
+          mountPath: "/tmp/.ssh"
+          readOnly: true
+        - mountPath: /tmp
+          name: tmp
+      
+      # envs are inserted as name/value pairs
+      env:
+        VERSION: "v0.5.10"
+        PORT: "8080"
+        # toggle Cloud Trace export
+        ENABLE_TRACING: "false"
+        ENABLE_METRICS: "false"
+        POLL_MS: "100"
+        CACHE_SIZE: "1000000"
+        # tell Java to obey container memory limits
+        JVM_OPTS: "-XX:+UnlockExperimentalVMOptions -XX:+UseCGroupMemoryLimitForHeap -Xms256m -Xmx512m"
+        # Valid levels are debug, info, warn, error, fatal.
+        # If no valid level is set, will default to info.
+        LOG_LEVEL: "info"
+      
+      # extraEnv are inserted directly as Yaml
+      extraEnv:
+        - name: NAMESPACE
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.namespace
+      
+      envFrom:
+        - configMapRef:
+            name: environment-config
+        # add ledger-db credentials from ConfigMap
+        - configMapRef:
+            name: ledger-db-config
+      
+      resources:
+        requests:
+          cpu: 100m
+          memory: 256Mi
+        limits:
+          cpu: 500m
+          memory: 512Mi
+      
+      readinessProbe:
+        httpGet:
+          path: /ready
+          port: 8080
+        initialDelaySeconds: 60
+        periodSeconds: 5
+        timeoutSeconds: 10
+      
+      livenessProbe:
+        httpGet:
+          path: /healthy
+          port: 8080
+        initialDelaySeconds: 120
+        periodSeconds: 5
+        timeoutSeconds: 10
+      
+      startupProbe:
+        httpGet:
+          path: /healthy
+          port: 8080
+        failureThreshold: 30
+        periodSeconds: 10
+    
+    volumes:
+      - name: publickey
+        secret:
+          secretName: jwt-key
+          items:
+          - key: jwtRS256.key.pub
+            path: publickey
+      - emptyDir: {}
+        name: tmp
+    
+  # frontend:
+  #   name:
+  #   app:
+  #   serviceAccountName:
+  #   terminationGracePeriodSeconds:
+  #   podSecurityContext:
+  #   container:
+  #     name:
+  #     securityContext:
+  #     image:
+  #     volumeMounts:
+  #     env:
+  #     envFrom:
+  #     resources:
+  #     readinessProbe:
+  #     livenessProbe:
+  #     startupProbe:
+  #   volumes:
+    
+  # ledger-db:
+  #   name:
+  #   app:
+  #   serviceAccountName:
+  #   terminationGracePeriodSeconds:
+  #   podSecurityContext:
+  #   container:
+  #     name:
+  #     securityContext:
+  #     image:
+  #     volumeMounts:
+  #     env:
+  #     envFrom:
+  #     resources:
+  #     readinessProbe:
+  #     livenessProbe:
+  #     startupProbe:
+  #   volumes:
+    
+  # ledger-writer:
+  #   name:
+  #   app:
+  #   serviceAccountName:
+  #   terminationGracePeriodSeconds:
+  #   podSecurityContext:
+  #   container:
+  #     name:
+  #     securityContext:
+  #     image:
+  #     volumeMounts:
+  #     env:
+  #     envFrom:
+  #     resources:
+  #     readinessProbe:
+  #     livenessProbe:
+  #     startupProbe:
+  #   volumes:
+    
+  # loadgenerator:
+  #   name:
+  #   app:
+  #   serviceAccountName:
+  #   terminationGracePeriodSeconds:
+  #   podSecurityContext:
+  #   container:
+  #     name:
+  #     securityContext:
+  #     image:
+  #     volumeMounts:
+  #     env:
+  #     envFrom:
+  #     resources:
+  #     readinessProbe:
+  #     livenessProbe:
+  #     startupProbe:
+  #   volumes:
+    
+  # transaction-history:
+  #   name:
+  #   app:
+  #   serviceAccountName:
+  #   terminationGracePeriodSeconds:
+  #   podSecurityContext:
+  #   container:
+  #     name:
+  #     securityContext:
+  #     image:
+  #     volumeMounts:
+  #     env:
+  #     envFrom:
+  #     resources:
+  #     readinessProbe:
+  #     livenessProbe:
+  #     startupProbe:
+  #   volumes:
+    
+  # userservice:
+  #   name:
+  #   app:
+  #   serviceAccountName:
+  #   terminationGracePeriodSeconds:
+  #   podSecurityContext:
+  #   container:
+  #     name:
+  #     securityContext:
+  #     image:
+  #     volumeMounts:
+  #     env:
+  #     envFrom:
+  #     resources:
+  #     readinessProbe:
+  #     livenessProbe:
+  #     startupProbe:
+  #   volumes:
+    
+config:
+  environment:
+    name: environment-config
+    data:
+      LOCAL_ROUTING_NUM: "883745000"
+      PUB_KEY_PATH: "/tmp/.ssh/publickey"
+  serviceApi:
+    name: service-api-config
+    data:
+      TRANSACTIONS_API_ADDR: "ledgerwriter:8080"
+      BALANCES_API_ADDR: "balancereader:8080"
+      HISTORY_API_ADDR: "transactionhistory:8080"
+      CONTACTS_API_ADDR: "contacts:8080"
+      USERSERVICE_API_ADDR: "userservice:8080"
+  demoData:
+    name: demo-data-config
+    data:
+      USE_DEMO_DATA: "True"
+      DEMO_LOGIN_USERNAME: "testuser"
+      # All demo user accounts are hardcoded to use the login password 'bankofanthos'
+      DEMO_LOGIN_PASSWORD: "bankofanthos"
