@@ -10,6 +10,10 @@ tar -xf /tmp/helm-docs.tar.gz helm-docs
 # validate docs
 ./helm-docs
 
+# Set git user config
+git config --global user.email "helm-docs-bot@example.com"
+git config --global user.name "helm-docs-bot"
+
 # Commit the changes made by helm-docs
 git add .
 git commit -m "Update documentation"
