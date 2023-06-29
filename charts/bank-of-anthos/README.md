@@ -52,7 +52,7 @@ A Helm chart for Google's Demo Application Bank of Anthos https://github.com/Goo
 | deployments.userservice.container.image | string | `"gcr.io/bank-of-anthos-ci/userservice"` | version tag is set by appVersion value |
 | fullnameOverride | string | `""` |  |
 | nameOverride | string | `""` |  |
-| secret | object | `{"enabled":false,"jwtRS256Key":"","jwtRS256KeyPub":""}` | This secret contains a keypair used to sign and verify JWTs for authentication. In practice, this should never be checked into version control. It is provided here to simplify deployment |
+| secret | object | `{"enabled":false,"jwtRS256Key":"","jwtRS256KeyPub":""}` | This secret contains a keypair used to sign and verify JWTs for authentication. In practice, this should never be checked into version control. It is provided here to simplify deployment **JWT Key Pair Secret** Bank of Anthos uses [Json Web Tokens (JWTs)](https://jwt.io/introduction/) to handle user authentication. JWTs use asymmetric key pairs to sign and verify tokens. In this case, `userservice` creates and signs tokens with a RSA private key when a user logs in, and the other services use the corresponding public key to validate the user. **Creating Secret Manually**   \$`openssl genrsa -out jwtRS256.key 4096`   \$`openssl rsa -in jwtRS256.key -outform PEM -pubout -out jwtRS256.key.pub`   \$`kubectl create secret generic jwt-key --from-file=./jwtRS256.key --from-file=./jwtRS256.key.pub`  |
 | secret.enabled | bool | `false` | secret should be created by helm chart |
 | secret.jwtRS256Key | string | `""` | JWT private key |
 | secret.jwtRS256KeyPub | string | `""` | JWT public key |
