@@ -2,7 +2,7 @@ name: Lint and Test Charts
 
 on:
   pull_request:
-    types: [opened, reopened]
+    types: [opened, reopened, edited]
     paths:
       - 'charts/**'
 
@@ -13,7 +13,7 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v3
       - name: Run chart-testing (lint)
-        uses: helm/chart-testing-action@master
+        uses: helm/chart-testing-action@main
         with:
           command: lint
           config: .github/ct.yaml
