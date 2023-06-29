@@ -13,7 +13,9 @@ spec:
   {{- if $statefulset.serviceName }}
   serviceName: {{ $statefulset.serviceName }}
   {{- end }}
+  {{- if $statefulset.replicas }}
   replicas: {{ $statefulset.replicas }}
+  {{- end }}
   selector:
     matchLabels:
       {{- include "bank-of-anthos.selectorLabels" $ | nindent 6 }}
