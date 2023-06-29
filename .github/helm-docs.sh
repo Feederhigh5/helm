@@ -11,8 +11,8 @@ tar -xf /tmp/helm-docs.tar.gz helm-docs
 ./helm-docs
 
 # Set git user config
-git config --global user.email "helm-docs-bot@example.com"
-git config --global user.name "helm-docs-bot"
+git config --global user.email "${GITHUB_ACTOR_ID}@users.noreply.github.com"
+git config --global user.name "${GITHUB_ACTOR}"
 
 # Get the current branch name
 CURRENT_BRANCH="${GITHUB_HEAD_REF}"
