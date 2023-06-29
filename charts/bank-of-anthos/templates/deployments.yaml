@@ -40,6 +40,9 @@ spec:
             {{- toYaml $deployment.container.securityContext  | nindent 12 }}
           {{- end }}
           image: {{ $deployment.container.image }}:{{ $.Values.appVersion }}
+          {{- if $deployment.container.command }}
+          command: {{- toYaml $deployment.container.command | nindent 12}}
+          {{- end }}
           {{- if $deployment.container.ports }}
           ports:
             {{- toYaml $deployment.container.ports | nindent 12 }}

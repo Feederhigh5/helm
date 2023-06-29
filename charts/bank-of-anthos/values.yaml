@@ -863,10 +863,17 @@ deployments:
       # -- version tag is set by appVersion value
       image: gcr.io/bank-of-anthos-ci/loadgenerator
 
+      command: [locust, "--autostart"]
+
       env:
-        FRONTEND_ADDR: "frontend:80"
-        USERS: "5"
-        LOG_LEVEL: "info"
+        # FRONTEND_ADDR: "frontend:80"
+        # USERS: "5"
+        # LOG_LEVEL: "info"
+        LOCUST_HOST: http://frontend
+        LOCUST_USERS: "5"
+        LOCUST_SPAWN_RATE: "1"
+        LOCUST_LOGLEVEL: info
+        LOCUST_WEB_PORT: "8080"
 
       resources:
         requests:
