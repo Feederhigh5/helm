@@ -17,9 +17,9 @@ git config --global user.name "helm-docs-bot"
 echo ${GITHUB_REF}
 
 # Get the current branch name
-CURRENT_BRANCH=$(echo "${GITHUB_REF}" | awk -F'/' '{print $3}')
+CURRENT_BRANCH=$(echo "${GITHUB_REF#refs/heads/}")
 
-echo ${CURRENT_BRANCH}
+echo "Current branch: ${CURRENT_BRANCH}"
 
 # Checkout the current branch
 git checkout "${CURRENT_BRANCH}"
