@@ -64,8 +64,9 @@ statefulsets:
           targetPort: 5432
           name: tcp
           protocol: TCP
-      additionalLabels:
-        tier: db
+
+    additionalLabels:
+      tier: db
 
   ledger-db:
 
@@ -234,6 +235,7 @@ deployments:
         name: tmp
   
     service:
+      type: ClusterIP
       name: balancereader
       ports:
         - name: http
@@ -387,7 +389,7 @@ deployments:
         # Set to "true" to enable the CymbalBank logo + title
         CYMBAL_LOGO: "false"
         # Customize the bank name used in the header. Defaults to 'Bank of Anthos' - when CYMBAL_LOGO is true, uses 'CymbalBank'
-        BANK_NAME: ""
+        # BANK_NAME: ""
         # Customize the cluster name if it cannot be retrieved from the metadata server
         CLUSTER_NAME: "mycluster-fra02-b3c.4x16"
         # Customize the metadata server hostname to query for metadata
@@ -624,6 +626,7 @@ deployments:
         ENABLE_METRICS: "false"
         POLL_MS: "100"
         CACHE_SIZE: "1000"
+        CACHE_MINUTES: "60"
         HISTORY_LIMIT: "100"
          # tell Java to obey container memory limits
         JVM_OPTS: "-XX:+UnlockExperimentalVMOptions -XX:+UseCGroupMemoryLimitForHeap -Xms256m -Xmx512m"

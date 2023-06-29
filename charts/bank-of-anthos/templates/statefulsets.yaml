@@ -6,7 +6,9 @@ metadata:
   labels:
     {{- include "bank-of-anthos.labels" $ | nindent 4 }}
     app: {{ $statefulset.app }}
-    tier: db
+    {{- if $statefulset.additionalLabels }}
+    {{- toYaml $statefulset.additionalLabels | nindent 4 }}
+    {{- end }}
 spec:
   {{- if $statefulset.serviceName }}
   serviceName: {{ $statefulset.serviceName }}
@@ -16,7 +18,9 @@ spec:
     matchLabels:
       {{- include "bank-of-anthos.selectorLabels" $ | nindent 6 }}
       app: {{ $statefulset.app }}
-      tier: db
+      {{- if $statefulset.additionalLabels }}
+      {{- toYaml $statefulset.additionalLabels | nindent 6 }}
+      {{- end }}
   template:
     metadata:
       annotations:
@@ -27,7 +31,9 @@ spec:
       labels:
         {{- include "bank-of-anthos.selectorLabels" $ | nindent 8 }}
         app: {{ $statefulset.app }}
-        tier: db
+        {{- if $statefulset.additionalLabels }}
+        {{- toYaml $statefulset.additionalLabels | nindent 8 }}
+        {{- end }}
     spec:
       serviceAccountName: {{ $statefulset.serviceAccountName }}
       containers:
@@ -35,20 +41,20 @@ spec:
         image: {{$statefulset.container.image}}:{{ $.Values.appVersion }}
         envFrom:
           {{- tpl $statefulset.container.envFrom $ | nindent 12 }}
-        {{- if $statefulset.port }}
+        {{- if $statefulset.container.ports }}
         ports:
-          {{ toYaml $statefulset.port | nindent 12 }}
+          {{- toYaml $statefulset.container.ports | nindent 12 }}
         {{- end }}
-        {{- if $statefulset.resources }}
+        {{- if $statefulset.container.resources }}
         resources:
-          {{- toYaml $statefulset.resources | nindent 12 }}
+          {{- toYaml $statefulset.container.resources | nindent 12 }}
         {{- end }}
         {{- if $statefulset.container.volumeMounts }}
         volumeMounts:
-        {{ toYaml $statefulset.container.volumeMounts | nindent 12}}
+        {{- toYaml $statefulset.container.volumeMounts | nindent 12}}
         {{- end }}
       {{- if $statefulset.volumes }}
       volumes:
-      {{ toYaml $statefulset.volumes | nindent 10}}
+      {{- toYaml $statefulset.volumes | nindent 10}}
       {{- end }}
 {{- end }}

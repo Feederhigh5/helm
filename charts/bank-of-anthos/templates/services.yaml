@@ -8,19 +8,19 @@ metadata:
     {{- include "bank-of-anthos.labels" $ | nindent 4 }}
     app: {{ $statefulset.app }}
     {{- if $statefulset.additionalLabels }}
-    {{ toYaml $statefulset.additionalLabels | nindent 4 }}
+    {{- toYaml $statefulset.additionalLabels | nindent 4 }}
     {{- end }}
 spec:
   {{- if $statefulset.service.type }}
-  type: {{ $statefulset.service.type }}}}
+  type: {{ $statefulset.service.type }}
   {{- end }}
   ports:
-    {{ toYaml $statefulset.service.name | nindent 4 }}
+    {{- toYaml $statefulset.service.ports | nindent 4 }}
   selector:
     {{- include "bank-of-anthos.selectorLabels" $ | nindent 4 }}
     app: {{ $statefulset.app }}
     {{- if $statefulset.additionalLabels }}
-    {{ toYaml $statefulset.additionalLabels | nindent 4 }}
+    {{- toYaml $statefulset.additionalLabels | nindent 4 }}
     {{- end }}
 {{- end }}
 ---
@@ -36,19 +36,19 @@ metadata:
     {{- include "bank-of-anthos.labels" $ | nindent 4 }}
     app: {{ $deployment.app }}
     {{- if $deployment.additionalLabels }}
-    {{ toYaml $deployment.additionalLabels | nindent 4 }}
+    {{- toYaml $deployment.additionalLabels | nindent 4 }}
     {{- end }}
 spec:
   {{- if $deployment.service.type }}
-  type: {{ $deployment.service.type }}}}
+  type: {{ $deployment.service.type }}
   {{- end }}
   ports:
-    {{ toYaml $deployment.service.name | nindent 4 }}
+    {{- toYaml $deployment.service.ports | nindent 4 }}
   selector:
     {{- include "bank-of-anthos.selectorLabels" $ | nindent 4 }}
     app: {{ $deployment.app }}
     {{- if $deployment.additionalLabels }}
-    {{ toYaml $deployment.additionalLabels | nindent 4 }}
+    {{- toYaml $deployment.additionalLabels | nindent 4 }}
     {{- end }}
 {{- end }}
 ---

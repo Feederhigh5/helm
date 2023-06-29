@@ -26,7 +26,10 @@ spec:
     spec:
       serviceAccountName: {{ $deployment.serviceAccountName }}
       {{- if $deployment.restartPolicy }}
-      {{ toYaml $deployment.restartPolicy | nindent 8 }}
+      restartPolicy: {{ $deployment.restartPolicy }}
+      {{- end }}
+      {{- if $deployment.terminationGracePeriodSeconds }}
+      terminationGracePeriodSeconds: {{ $deployment.terminationGracePeriodSeconds }}
       {{- end }}
       securityContext:
         {{- toYaml $deployment.podSecurityContext | nindent 8 }}
@@ -73,7 +76,7 @@ spec:
           {{- end }}
           resources:
             {{- toYaml $deployment.container.resources | nindent 12 }}
-      {{- if $deployment.container.volumes }}
+      {{- if $deployment.volumes }}
       volumes:
       {{- toYaml $deployment.volumes | nindent 8 }}
       {{- end }} 
