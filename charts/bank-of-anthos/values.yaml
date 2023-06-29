@@ -1,0 +1,896 @@
+# Default values for bank-of-anthos.
+# This is a YAML-formatted file.
+# Declare variables to be passed into your templates.
+appVersion: "v0.5.10"
+
+nameOverride: ""
+fullnameOverride: ""
+
+statefulsets:
+  accountsdb:
+    
+    name: accounts-db
+
+    app: accounts-db
+
+    serviceName: "accounts-db"
+    
+    replicas: 1
+
+    podAnnotations: {}
+
+    serviceAccountName: default
+
+    container:
+    
+      name: accounts-db
+    
+      ports:
+        - containerPort: 5432
+          name: postgredb
+      
+      # version tag is set by appVersion value
+      image: gcr.io/bank-of-anthos-ci/accounts-db
+      
+      envFrom: |
+        - configMapRef:
+            name: {{ $.Values.configMaps.environment.name }}
+        - configMapRef:
+            name: {{ $.Values.configMaps.accountsdb.name }}
+        - configMapRef:
+            name: {{ $.Values.configMaps.demoData.name }}
+      
+      resources:
+        requests:
+          cpu: 100m
+          memory: 128Mi
+        limits:
+          cpu: 250m
+          memory: 512Mi
+
+      volumeMounts:
+        - name: postgresdb
+          mountPath: /var/lib/postgresql/data
+          subPath: postgres
+    
+    volumes:
+      - name: postgresdb
+        emptyDir: {}
+
+    service:
+      name: accounts-db
+      ports:
+        - port: 5432
+          targetPort: 5432
+          name: tcp
+          protocol: TCP
+
+    additionalLabels:
+      tier: db
+
+  ledger-db:
+
+    name: ledger-db
+
+    app: ledger-db
+
+    serviceName: "ledger-db"
+    
+    replicas: 1
+
+    podAnnotations: {}
+
+    serviceAccountName: default
+
+    container:
+      
+      name: postgres
+
+      ports:
+        - containerPort: 5432
+      
+      # version tag is set by appVersion value
+      image: gcr.io/bank-of-anthos-ci/ledger-db
+      
+      envFrom: |
+        - configMapRef:
+            name: {{ $.Values.configMaps.environment.name }}
+        - configMapRef:
+            name: {{ $.Values.configMaps.ledgerdb.name }}
+        - configMapRef:
+            name: {{ $.Values.configMaps.demoData.name }}
+      
+      resources:
+        requests:
+          cpu: 100m
+          memory: 512Mi
+        limits:
+          cpu: 250m
+          memory: 1Gi
+
+      volumeMounts:
+        - name: postgresdb
+          mountPath: /var/lib/postgresql/data
+          subPath: postgres
+
+    volumes:
+      - name: postgresdb
+        emptyDir: {}
+
+    service:
+      name: ledger-db
+      ports:
+        - name: tcp
+          port: 5432
+          targetPort: 5432
+
+
+deployments:
+  balance-reader:
+    name: balancereader
+    app: balancereader
+    
+    podAnnotations: {}
+
+    serviceAccountName: default
+    
+    terminationGracePeriodSeconds: 5
+    
+    podSecurityContext:
+      fsGroup: 1000
+      runAsGroup: 1000
+      runAsNonRoot: true
+      runAsUser: 1000
+    
+    container:
+      name: balancereader
+      
+      securityContext:
+        allowPrivilegeEscalation: false
+        capabilities:
+          drop:
+            - all
+        privileged: false
+        readOnlyRootFilesystem: true
+      
+      # version tag is set by appVersion value
+      image: gcr.io/bank-of-anthos-ci/balancereader
+      
+
+      volumeMounts:
+        - name: publickey
+          mountPath: "/tmp/.ssh"
+          readOnly: true
+        - mountPath: /tmp
+          name: tmp
+      
+      # envs are inserted as name/value pairs
+      env:
+        VERSION: "{{ $.Values.appVersion }}"
+        PORT: "8080"
+        # toggle Cloud Trace export
+        ENABLE_TRACING: "false"
+        ENABLE_METRICS: "false"
+        POLL_MS: "100"
+        CACHE_SIZE: "1000000"
+        # tell Java to obey container memory limits
+        JVM_OPTS: "-XX:+UnlockExperimentalVMOptions -XX:+UseCGroupMemoryLimitForHeap -Xms256m -Xmx512m"
+        # Valid levels are debug, info, warn, error, fatal.
+        # If no valid level is set, will default to info.
+        LOG_LEVEL: "info"
+      
+      # extraEnv are inserted directly as Yaml
+      extraEnv:
+        - name: NAMESPACE
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.namespace
+      
+      envFrom: |
+        - configMapRef:
+            name: {{ $.Values.configMaps.environment.name }}
+        # add ledger-db credentials from ConfigMap
+        - configMapRef:
+            name: {{ $.Values.configMaps.ledgerdb.name }}
+      
+      resources:
+        requests:
+          cpu: 100m
+          memory: 256Mi
+        limits:
+          cpu: 500m
+          memory: 512Mi
+      
+      readinessProbe:
+        httpGet:
+          path: /ready
+          port: 8080
+        initialDelaySeconds: 60
+        periodSeconds: 5
+        timeoutSeconds: 10
+      
+      livenessProbe:
+        httpGet:
+          path: /healthy
+          port: 8080
+        initialDelaySeconds: 120
+        periodSeconds: 5
+        timeoutSeconds: 10
+      
+      startupProbe:
+        httpGet:
+          path: /healthy
+          port: 8080
+        failureThreshold: 30
+        periodSeconds: 10
+    
+    volumes:
+      - name: publickey
+        secret:
+          secretName: jwt-key
+          items:
+          - key: jwtRS256.key.pub
+            path: publickey
+      - emptyDir: {}
+        name: tmp
+  
+    service:
+      type: ClusterIP
+      name: balancereader
+      ports:
+        - name: http
+          port: 8080
+          targetPort: 8080
+
+  contacts:
+    name: contacts
+    app: contacts
+    
+    podAnnotations: {}
+
+    serviceAccountName: default
+    
+    terminationGracePeriodSeconds: 5
+    
+    podSecurityContext:
+      fsGroup: 1000
+      runAsGroup: 1000
+      runAsNonRoot: true
+      runAsUser: 1000
+    
+    container:
+      name: contacts
+      
+      securityContext:
+        allowPrivilegeEscalation: false
+        capabilities:
+          drop:
+            - all
+        privileged: false
+        readOnlyRootFilesystem: true
+      
+      # version tag is set by appVersion value
+      image: gcr.io/bank-of-anthos-ci/contacts
+      
+      volumeMounts:
+        - name: publickey
+          mountPath: "/tmp/.ssh"
+          readOnly: true
+        - mountPath: /tmp
+          name: tmp
+      
+      # envs are inserted as name/value pairs
+      env:
+        VERSION: "{{ $.Values.appVersion }}"
+        PORT: "8080"
+        # toggle Cloud Trace export
+        ENABLE_TRACING: "false"
+        # Valid levels are debug, info, warn, error, fatal.
+        # If no valid level is set, will default to info.
+        LOG_LEVEL: "info"
+      
+      # extraEnv are inserted directly as Yaml
+      extraEnv: {}
+     
+      envFrom: |
+        - configMapRef:
+            name: {{ $.Values.configMaps.environment.name }}
+        - configMapRef:
+            name: {{ $.Values.configMaps.accountsdb.name }}
+      
+      resources:
+        requests:
+          cpu: 100m
+          memory: 64Mi
+        limits:
+          cpu: 250m
+          memory: 128Mi
+      
+      readinessProbe:
+        httpGet:
+          path: /ready
+          port: 8080
+        initialDelaySeconds: 60
+        periodSeconds: 5
+        timeoutSeconds: 10
+    
+    volumes:
+      - name: publickey
+        secret:
+          secretName: jwt-key
+          items:
+          - key: jwtRS256.key.pub
+            path: publickey
+      - emptyDir: {}
+        name: tmp
+    
+    service:
+      name: contacts
+      type: ClusterIP
+      ports:
+        - name: http
+          port: 8080
+          targetPort: 8080
+
+
+  frontend:
+    name: frontend
+
+    app: frontend
+
+    podAnnotations: {}
+
+    serviceAccountName: default
+
+    terminationGracePeriodSeconds: 5
+
+    podSecurityContext:
+      fsGroup: 1000
+      runAsGroup: 1000
+      runAsNonRoot: true
+      runAsUser: 1000
+
+    container:
+      name: frontend
+
+      securityContext:
+        allowPrivilegeEscalation: false
+        capabilities:
+          drop:
+            - all
+        privileged: false
+        readOnlyRootFilesystem: true
+
+      # version tag is set by appVersion value
+      image: gcr.io/bank-of-anthos-ci/frontend
+
+      # port previously not defined..?
+      ports:
+        - name: http
+          containerPort: 8080
+          protocol: TCP
+
+      volumeMounts:
+        - name: publickey
+          mountPath: "/tmp/.ssh"
+          readOnly: true
+        - mountPath: /tmp
+          name: tmp
+
+      env:
+        VERSION: "{{ $.Values.appVersion }}"
+        PORT: "8080"
+        # toggle Cloud Trace export
+        ENABLE_TRACING: "false"
+        SCHEME: "http"
+        # Valid levels are debug, info, warn, error, fatal.
+        # If no valid level is set, will default to info.
+        LOG_LEVEL: "info"
+        # Set to "true" to enable the CymbalBank logo + title
+        CYMBAL_LOGO: "false"
+        # Customize the bank name used in the header. Defaults to 'Bank of Anthos' - when CYMBAL_LOGO is true, uses 'CymbalBank'
+        # BANK_NAME: ""
+        # Customize the cluster name if it cannot be retrieved from the metadata server
+        CLUSTER_NAME: "mycluster-fra02-b3c.4x16"
+        # Customize the metadata server hostname to query for metadata
+        # METADATA_SERVER: "my-metadata-server"
+        # Customize the pod zone if it cannot be retrieved from the metadata server
+        #POD_ZONE: "my-zone"
+
+      extraEnv:
+        - name: DEFAULT_USERNAME
+          valueFrom:
+            configMapKeyRef:
+              name: demo-data-config
+              key: DEMO_LOGIN_USERNAME
+        - name: DEFAULT_PASSWORD
+          valueFrom:
+            configMapKeyRef:
+              name: demo-data-config
+              key: DEMO_LOGIN_PASSWORD
+        - name: REGISTERED_OAUTH_CLIENT_ID
+          valueFrom:
+            configMapKeyRef:
+              name: oauth-config
+              key: DEMO_OAUTH_CLIENT_ID
+              optional: true
+        - name: ALLOWED_OAUTH_REDIRECT_URI
+          valueFrom:
+            configMapKeyRef:
+              name: oauth-config
+              key: DEMO_OAUTH_REDIRECT_URI
+              optional: true
+      
+      envFrom: |
+        - configMapRef:
+            name: {{ $.Values.configMaps.environment.name }}
+        - configMapRef:
+            name: {{ $.Values.configMaps.serviceApi.name }}
+
+      resources:
+        requests:
+          cpu: 100m
+          memory: 64Mi
+        limits:
+          cpu: 250m
+          memory: 128Mi
+
+      readinessProbe:
+        httpGet:
+          path: /ready
+          port: 8080
+        initialDelaySeconds: 10
+        periodSeconds: 5
+        timeoutSeconds: 10
+        
+      livenessProbe:
+        httpGet:
+          path: /ready
+          port: 8080
+        initialDelaySeconds: 60
+        periodSeconds: 15
+        timeoutSeconds: 30
+
+    volumes:
+      - name: publickey
+        secret:
+          secretName: jwt-key
+          items:
+          - key: jwtRS256.key.pub
+            path: publickey
+      - emptyDir: {}
+        name: tmp
+
+
+    service:
+      name: frontend
+      type: LoadBalancer
+      ports:
+        - name: http
+          port: 80
+          targetPort: 8080
+
+    
+  ledger-writer:
+
+    name: ledgerwriter
+
+    app: ledgerwriter
+
+    podAnnotations: {}
+
+    serviceAccountName: default
+
+    terminationGracePeriodSeconds: 5
+
+    podSecurityContext:
+      securityContext:
+      fsGroup: 1000
+      runAsGroup: 1000
+      runAsNonRoot: true
+      runAsUser: 1000
+
+    container:
+
+      name: ledgerwriter
+
+      securityContext:
+        allowPrivilegeEscalation: false
+        capabilities:
+          drop:
+            - all
+        privileged: false
+        readOnlyRootFilesystem: true
+
+      # version tag is set by appVersion value
+      image: gcr.io/bank-of-anthos-ci/ledgerwriter
+
+      volumeMounts:
+        - name: publickey
+          mountPath: "/tmp/.ssh"
+          readOnly: true
+        - mountPath: /tmp
+          name: tmp
+
+      env:
+        VERSION: "{{ $.Values.appVersion }}"
+        PORT: "8080"
+        # toggle Cloud Trace export
+        ENABLE_TRACING: "false"
+        ENABLE_METRICS: "false"
+         # tell Java to obey container memory limits
+        JVM_OPTS: "-XX:+UnlockExperimentalVMOptions -XX:+UseCGroupMemoryLimitForHeap -Xms256m -Xmx512m"
+        # Valid levels are debug, info, warn, error, fatal.
+        # If no valid level is set, will default to info.
+        LOG_LEVEL: "info"
+        
+      extraEnv:
+        - name: NAMESPACE
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.namespace
+
+      envFrom: |
+        - configMapRef:
+            name: {{ $.Values.configMaps.environment.name }}
+        - configMapRef:
+            name: {{ $.Values.configMaps.serviceApi.name }}
+        # add ledger-db credentials from ConfigMap
+        - configMapRef:
+            name: {{ $.Values.configMaps.ledgerdb.name }}
+
+      resources:
+        requests:
+          cpu: 100m
+          memory: 256Mi
+        limits:
+          cpu: 500m
+          memory: 512Mi
+
+      readinessProbe:
+        httpGet:
+          path: /ready
+          port: 8080
+        initialDelaySeconds: 60
+        periodSeconds: 5
+        timeoutSeconds: 10
+
+      startupProbe:
+        httpGet:
+          path: /ready
+          port: 8080
+        failureThreshold: 30
+        periodSeconds: 10
+    volumes:
+      - name: publickey
+        secret:
+          secretName: jwt-key
+          items:
+          - key: jwtRS256.key.pub
+            path: publickey
+      - emptyDir: {}
+        name: tmp
+    
+    service:
+      name: ledgerwriter
+      type: ClusterIP
+      ports:
+        - name: http
+          port: 8080
+          targetPort: 8080
+
+  transaction-history:
+    
+    name: transactionhistory
+    
+    app: transactionhistory
+    
+    podAnnotations: {}
+
+    serviceAccountName: default
+    
+    terminationGracePeriodSeconds: 5
+    
+    podSecurityContext:
+      fsGroup: 1000
+      runAsGroup: 1000
+      runAsNonRoot: true
+      runAsUser: 1000
+    
+    container:
+      name: transactionhistory
+      
+      securityContext:
+        allowPrivilegeEscalation: false
+        capabilities:
+          drop:
+            - all
+        privileged: false
+        readOnlyRootFilesystem: true
+      
+      # version tag is set by appVersion value
+      image: gcr.io/bank-of-anthos-ci/transactionhistory
+      
+      volumeMounts:
+        - name: publickey
+          mountPath: "/tmp/.ssh"
+          readOnly: true
+        - mountPath: /tmp
+          name: tmp
+      
+      env:
+        VERSION: "{{ $.Values.appVersion }}"
+        PORT: "8080"
+        # toggle Cloud Trace export
+        ENABLE_TRACING: "false"
+        ENABLE_METRICS: "false"
+        POLL_MS: "100"
+        CACHE_SIZE: "1000"
+        CACHE_MINUTES: "60"
+        HISTORY_LIMIT: "100"
+         # tell Java to obey container memory limits
+        JVM_OPTS: "-XX:+UnlockExperimentalVMOptions -XX:+UseCGroupMemoryLimitForHeap -Xms256m -Xmx512m"
+        # EXTRA_LATENCY_MILLIS: "5000"
+        # Valid levels are debug, info, warn, error, fatal.
+        # If no valid level is set, will default to info.
+        LOG_LEVEL: "info"
+
+      extraEnv:
+        - name: NAMESPACE
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.namespace
+
+      envFrom: |
+        - configMapRef:
+            name: {{ $.Values.configMaps.environment.name }}
+        # add ledger-db credentials from ConfigMap
+        - configMapRef:
+            name: {{ $.Values.configMaps.ledgerdb.name }}
+
+      resources:
+        requests:
+          cpu: 100m
+          memory: 256Mi
+        limits:
+          cpu: 500m
+          memory: 512Mi
+
+      readinessProbe:
+        httpGet:
+          path: /ready
+          port: 8080
+        initialDelaySeconds: 60
+        periodSeconds: 5
+        timeoutSeconds: 10
+
+      livenessProbe:
+        httpGet:
+          path: /healthy
+          port: 8080
+        initialDelaySeconds: 120
+        periodSeconds: 5
+        timeoutSeconds: 10
+
+      startupProbe:
+        httpGet:
+          path: /healthy
+          port: 8080
+        failureThreshold: 30
+        periodSeconds: 10
+
+    volumes:
+      - name: publickey
+        secret:
+          secretName: jwt-key
+          items:
+          - key: jwtRS256.key.pub
+            path: publickey
+      - emptyDir: {}
+        name: tmp
+    
+    service:
+      name: transactionhistory
+      type: ClusterIP
+      ports:
+        - name: http
+          port: 8080
+          targetPort: 8080
+
+  userservice:
+
+    name: userservice
+
+    app: userservice
+
+    podAnnotations: {}
+
+    serviceAccountName: default
+
+    terminationGracePeriodSeconds: 5
+
+    podSecurityContext:
+      fsGroup: 1000
+      runAsGroup: 1000
+      runAsNonRoot: true
+      runAsUser: 1000
+
+    container:
+
+      name: userservice
+
+      securityContext:
+          allowPrivilegeEscalation: false
+          capabilities:
+            drop:
+              - all
+          privileged: false
+          readOnlyRootFilesystem: true
+          
+  # version tag is set by appVersion value
+
+      image: gcr.io/bank-of-anthos-ci/userservice
+
+      volumeMounts:
+        - name: keys
+          mountPath: "/tmp/.ssh"
+          readOnly: true
+        - mountPath: /tmp
+          name: tmp
+
+      ports:
+        - name: http-server
+          containerPort: 8080
+
+      env:
+        VERSION: "{{ $.Values.appVersion }}"
+        PORT: "8080"
+        # toggle Cloud Trace export
+        ENABLE_TRACING: "false"
+        TOKEN_EXPIRY_SECONDS: "3600"
+        PRIV_KEY_PATH: "/tmp/.ssh/privatekey"
+        # Valid levels are debug, info, warn, error, fatal.
+        # If no valid level is set, will default to info.
+        LOG_LEVEL: "info"
+
+      envFrom: |
+        - configMapRef:
+            name: {{ $.Values.configMaps.environment.name }}
+        - configMapRef:
+            name: {{ $.Values.configMaps.accountsdb.name }}
+
+      resources:
+          requests:
+            cpu: 300m
+            memory: 128Mi
+          limits:
+            cpu: 500m
+            memory: 256Mi
+
+      readinessProbe:
+        httpGet:
+          path: /ready
+          port: 8080
+        initialDelaySeconds: 10
+        periodSeconds: 5
+        timeoutSeconds: 10
+
+    volumes:
+      - name: keys
+        secret:
+          secretName: jwt-key
+          items:
+          - key: jwtRS256.key
+            path: privatekey
+          - key: jwtRS256.key.pub
+            path: publickey
+      - emptyDir: {}
+        name: tmp
+
+    service:
+      name: userservice
+      type: ClusterIP
+      ports:
+        - name: http
+          port: 8080
+          targetPort: 8080
+
+
+
+  loadgenerator:
+
+    name: loadgenerator
+
+    app: loadgenerator
+
+    replicas: 1
+
+    podAnnotations: 
+      sidecar.istio.io/rewriteAppHTTPProbers: "true"
+
+    serviceAccountName: default
+
+    terminationGracePeriodSeconds: 5
+
+    restartPolicy: Always
+
+    podSecurityContext:
+      fsGroup: 1000
+      runAsGroup: 1000
+      runAsNonRoot: true
+      runAsUser: 1000
+
+    container:
+
+      name: loadgenerator
+
+      securityContext:
+        allowPrivilegeEscalation: false
+        capabilities:
+          drop:
+            - all
+        privileged: false
+        readOnlyRootFilesystem: true
+
+      # version tag is set by appVersion value
+      image: gcr.io/bank-of-anthos-ci/loadgenerator
+
+      env:
+        FRONTEND_ADDR: "frontend:80"
+        USERS: "5"
+        LOG_LEVEL: "info"
+
+      resources:
+        requests:
+          cpu: 100m
+          memory: 512Mi
+        limits:
+          cpu: 250m
+          memory: 1Gi
+    
+configMaps:
+  
+  environment:
+    name: environment-config
+    data:
+      LOCAL_ROUTING_NUM: "883745000"
+      PUB_KEY_PATH: "/tmp/.ssh/publickey"
+  
+  serviceApi:
+    name: service-api-config
+    data:
+      TRANSACTIONS_API_ADDR: "ledgerwriter:8080"
+      BALANCES_API_ADDR: "balancereader:8080"
+      HISTORY_API_ADDR: "transactionhistory:8080"
+      CONTACTS_API_ADDR: "contacts:8080"
+      USERSERVICE_API_ADDR: "userservice:8080"
+  
+  demoData:
+    name: demo-data-config
+    data:
+      USE_DEMO_DATA: "True"
+      DEMO_LOGIN_USERNAME: "testuser"
+      # All demo user accounts are hardcoded to use the login password 'bankofanthos'
+      DEMO_LOGIN_PASSWORD: "bankofanthos"
+  
+  ledgerdb:
+    name: ledger-db-config
+    labels:
+      app: postgres
+    data:
+      POSTGRES_DB: postgresdb
+      POSTGRES_USER: admin
+      POSTGRES_PASSWORD: password
+      SPRING_DATASOURCE_URL: jdbc:postgresql://ledger-db:5432/postgresdb
+      SPRING_DATASOURCE_USERNAME: admin # should match POSTGRES_USER
+      SPRING_DATASOURCE_PASSWORD: password # should match POSTGRES_PASSWORD
+  
+  accountsdb:
+    name: accounts-db-config
+    labels:
+      app: accounts-db
+    data:
+      POSTGRES_DB: accounts-db
+      POSTGRES_USER: accounts-admin
+      POSTGRES_PASSWORD: accounts-pwd
+      ACCOUNTS_DB_URI: postgresql://accounts-admin:accounts-pwd@accounts-db:5432/accounts-db

@@ -1,0 +1,60 @@
+{{- range $statefulset := .Values.statefulsets }}
+kind: StatefulSet
+apiVersion: apps/v1
+metadata:
+  name: {{ $statefulset.name }}
+  labels:
+    {{- include "bank-of-anthos.labels" $ | nindent 4 }}
+    app: {{ $statefulset.app }}
+    {{- if $statefulset.additionalLabels }}
+    {{- toYaml $statefulset.additionalLabels | nindent 4 }}
+    {{- end }}
+spec:
+  {{- if $statefulset.serviceName }}
+  serviceName: {{ $statefulset.serviceName }}
+  {{- end }}
+  replicas: {{ $statefulset.replicas }}
+  selector:
+    matchLabels:
+      {{- include "bank-of-anthos.selectorLabels" $ | nindent 6 }}
+      app: {{ $statefulset.app }}
+      {{- if $statefulset.additionalLabels }}
+      {{- toYaml $statefulset.additionalLabels | nindent 6 }}
+      {{- end }}
+  template:
+    metadata:
+      annotations:
+        checksum/config: {{ include (print $.Template.BasePath "/configmaps.yaml") $ | sha256sum }}
+        {{- if $statefulset.podAnnotations }}
+        {{- toYaml $statefulset.podAnnotations | nindent 8 }}
+        {{- end }}
+      labels:
+        {{- include "bank-of-anthos.selectorLabels" $ | nindent 8 }}
+        app: {{ $statefulset.app }}
+        {{- if $statefulset.additionalLabels }}
+        {{- toYaml $statefulset.additionalLabels | nindent 8 }}
+        {{- end }}
+    spec:
+      serviceAccountName: {{ $statefulset.serviceAccountName }}
+      containers:
+      - name: {{ $statefulset.container.name }}
+        image: {{$statefulset.container.image}}:{{ $.Values.appVersion }}
+        envFrom:
+          {{- tpl $statefulset.container.envFrom $ | nindent 12 }}
+        {{- if $statefulset.container.ports }}
+        ports:
+          {{- toYaml $statefulset.container.ports | nindent 12 }}
+        {{- end }}
+        {{- if $statefulset.container.resources }}
+        resources:
+          {{- toYaml $statefulset.container.resources | nindent 12 }}
+        {{- end }}
+        {{- if $statefulset.container.volumeMounts }}
+        volumeMounts:
+        {{- toYaml $statefulset.container.volumeMounts | nindent 12}}
+        {{- end }}
+      {{- if $statefulset.volumes }}
+      volumes:
+      {{- toYaml $statefulset.volumes | nindent 10}}
+      {{- end }}
+{{- end }}
