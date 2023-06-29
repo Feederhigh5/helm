@@ -33,8 +33,9 @@ secret:
 
 
 
-
+# -- values for the statefulsets accounts-db and ledger-db
 statefulsets:
+  # -- configuration for accountsdb statefulset
   accountsdb:
     
     name: accounts-db
@@ -96,6 +97,7 @@ statefulsets:
     additionalLabels:
       tier: db
 
+  # -- configuration for ledger-db statefulset
   ledger-db:
 
     name: ledger-db
@@ -152,8 +154,9 @@ statefulsets:
           port: 5432
           targetPort: 5432
 
-
+# -- values for the deployments
 deployments:
+  # -- configuration for balance-reader deployment
   balance-reader:
     name: balancereader
     app: balancereader
@@ -203,7 +206,8 @@ deployments:
         CACHE_SIZE: "1000000"
         # -- tell Java to obey container memory limits
         JVM_OPTS: "-XX:+UnlockExperimentalVMOptions -XX:+UseCGroupMemoryLimitForHeap -Xms256m -Xmx512m"
-        # -- Valid levels are debug, info, warn, error, fatal. If no valid level is set, will default to info.
+        # -- Valid levels are debug, info, warn, error, fatal.
+        # If no valid level is set, will default to info.
         LOG_LEVEL: "info"
       
       # -- extraEnv are inserted directly as Yaml
@@ -269,6 +273,7 @@ deployments:
           port: 8080
           targetPort: 8080
 
+  # -- configuration for contacts deployment
   contacts:
     name: contacts
     app: contacts
@@ -313,7 +318,7 @@ deployments:
         # -- toggle Cloud Trace export
         ENABLE_TRACING: "false"
         # -- Valid levels are debug, info, warn, error, fatal.
-        # -- If no valid level is set, will default to info.
+        # If no valid level is set, will default to info.
         LOG_LEVEL: "info"
       
       # -- extraEnv are inserted directly as Yaml
@@ -359,7 +364,7 @@ deployments:
           port: 8080
           targetPort: 8080
 
-
+  # -- configuration for frontend deployment
   frontend:
     name: frontend
 
@@ -411,7 +416,7 @@ deployments:
         ENABLE_TRACING: "false"
         SCHEME: "http"
         # -- Valid levels are debug, info, warn, error, fatal.
-        # -- If no valid level is set, will default to info.
+        # If no valid level is set, will default to info.
         LOG_LEVEL: "info"
         # -- Set to "true" to enable the CymbalBank logo + title
         CYMBAL_LOGO: "false"
@@ -497,7 +502,7 @@ deployments:
           port: 80
           targetPort: 8080
 
-    
+  # -- configuration for ledgerwriter deployment
   ledger-writer:
 
     name: ledgerwriter
@@ -606,6 +611,7 @@ deployments:
           port: 8080
           targetPort: 8080
 
+  # -- configuration for transactionhistory deployment
   transaction-history:
     
     name: transactionhistory
@@ -658,7 +664,8 @@ deployments:
         # -- tell Java to obey container memory limits
         JVM_OPTS: "-XX:+UnlockExperimentalVMOptions -XX:+UseCGroupMemoryLimitForHeap -Xms256m -Xmx512m"
         # EXTRA_LATENCY_MILLIS: "5000"
-        # -- Valid levels are debug, info, warn, error, fatal. If no valid level is set, will default to info.
+        # -- Valid levels are debug, info, warn, error, fatal.
+        # If no valid level is set, will default to info.
         LOG_LEVEL: "info"
 
       extraEnv:
@@ -723,6 +730,7 @@ deployments:
           port: 8080
           targetPort: 8080
 
+  # -- configuration for userservice deployment
   userservice:
 
     name: userservice
@@ -774,7 +782,8 @@ deployments:
         ENABLE_TRACING: "false"
         TOKEN_EXPIRY_SECONDS: "3600"
         PRIV_KEY_PATH: "/tmp/.ssh/privatekey"
-        # -- Valid levels are debug, info, warn, error, fatal. If no valid level is set, will default to info.
+        # -- Valid levels are debug, info, warn, error, fatal.
+        # If no valid level is set, will default to info.
         LOG_LEVEL: "info"
 
       envFrom: |
@@ -819,8 +828,7 @@ deployments:
           port: 8080
           targetPort: 8080
 
-
-
+  # -- configuration for loadgenerator deployment
   loadgenerator:
 
     name: loadgenerator
@@ -871,7 +879,9 @@ deployments:
         limits:
           cpu: 250m
           memory: 1Gi
-    
+
+
+# -- configuration for configmaps
 configMaps:
   
   environment:
@@ -906,8 +916,10 @@ configMaps:
       POSTGRES_USER: admin
       POSTGRES_PASSWORD: password
       SPRING_DATASOURCE_URL: jdbc:postgresql://ledger-db:5432/postgresdb
-      SPRING_DATASOURCE_USERNAME: admin # -- should match POSTGRES_USER
-      SPRING_DATASOURCE_PASSWORD: password # -- should match POSTGRES_PASSWORD
+      # -- should match POSTGRES_USER
+      SPRING_DATASOURCE_USERNAME: admin 
+      # -- should match POSTGRES_PASSWORD
+      SPRING_DATASOURCE_PASSWORD: password 
   
   accountsdb:
     name: accounts-db-config
