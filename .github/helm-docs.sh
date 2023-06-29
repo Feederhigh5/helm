@@ -14,7 +14,7 @@ tar -xf /tmp/helm-docs.tar.gz helm-docs
 git config --global user.email "helm-docs-bot@example.com"
 git config --global user.name "helm-docs-bot"
 
-echo ${GITHUB_REF}
+echo "github ref: ${GITHUB_REF}"
 
 # Get the current branch name
 CURRENT_BRANCH=$(echo "${GITHUB_REF#refs/heads/}")
