@@ -14,9 +14,15 @@ tar -xf /tmp/helm-docs.tar.gz helm-docs
 git config --global user.email "helm-docs-bot@example.com"
 git config --global user.name "helm-docs-bot"
 
+# Get the current branch name
+CURRENT_BRANCH=$(echo "${GITHUB_REF}" | awk -F'/' '{print $3}')
+
+# Checkout the current branch
+git checkout "${CURRENT_BRANCH}"
+
 # Commit the changes made by helm-docs
 git add .
 git commit -m "Update documentation"
 
 # Push the changes to the branch
-git push
+git push origin "${CURRENT_BRANCH}"
