@@ -9,4 +9,5 @@ metadata:
   {{- end }}
 data:
   {{- toYaml $config.data | nindent 2 }}
+---
 {{- end }}
