@@ -10,23 +10,13 @@ tar -xf /tmp/helm-docs.tar.gz helm-docs
 # validate docs
 ./helm-docs
 
-echo "actor_id ${GITHUB_ACTOR_ID} and github_actor ${GITHUB_ACTOR}"
-
 # Set git user config
-git config user.email "${GITHUB_ACTOR}@users.noreply.github.com"
-git config user.name "${GITHUB_ACTOR}"
-
-# Get the current branch name
-CURRENT_BRANCH="${GITHUB_HEAD_REF}"
-
-echo "Current branch: ${CURRENT_BRANCH}"
-
-# Checkout the current branch
-git checkout "${CURRENT_BRANCH}"
+git config user.name github-actions
+git config user.email github-actions@github.com
 
 # Commit the changes made by helm-docs
 git add .
 git commit -m "Update documentation"
 
 # Push the changes to the branch
-git push origin "${CURRENT_BRANCH}"
+git push
