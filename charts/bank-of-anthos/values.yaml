@@ -1,6 +1,7 @@
 # Default values for bank-of-anthos.
 # This is a YAML-formatted file.
 # Declare variables to be passed into your templates.
+# -- sets the version of bank-of-anthos that should be deployed (sets the image tags)
 appVersion: "v0.5.10"
 
 nameOverride: ""

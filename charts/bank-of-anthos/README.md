@@ -8,7 +8,7 @@ A Helm chart for Google's Demo Application Bank of Anthos https://github.com/Goo
 
 | Key | Type | Default | Description |
 |-----|------|---------|-------------|
-| appVersion | string | `"v0.5.10"` |  |
+| appVersion | string | `"v0.5.10"` | sets the version of bank-of-anthos that should be deployed (sets the image tags) |
 | configMaps | object | `{"accountsdb":{"data":{"ACCOUNTS_DB_URI":"postgresql://accounts-admin:accounts-pwd@accounts-db:5432/accounts-db","POSTGRES_DB":"accounts-db","POSTGRES_PASSWORD":"accounts-pwd","POSTGRES_USER":"accounts-admin"},"labels":{"app":"accounts-db"},"name":"accounts-db-config"},"demoData":{"data":{"DEMO_LOGIN_PASSWORD":"bankofanthos","DEMO_LOGIN_USERNAME":"testuser","USE_DEMO_DATA":"True"},"name":"demo-data-config"},"environment":{"data":{"LOCAL_ROUTING_NUM":"883745000","PUB_KEY_PATH":"/tmp/.ssh/publickey"},"name":"environment-config"},"ledgerdb":{"data":{"POSTGRES_DB":"postgresdb","POSTGRES_PASSWORD":"password","POSTGRES_USER":"admin","SPRING_DATASOURCE_PASSWORD":"password","SPRING_DATASOURCE_URL":"jdbc:postgresql://ledger-db:5432/postgresdb","SPRING_DATASOURCE_USERNAME":"admin"},"labels":{"app":"postgres"},"name":"ledger-db-config"},"serviceApi":{"data":{"BALANCES_API_ADDR":"balancereader:8080","CONTACTS_API_ADDR":"contacts:8080","HISTORY_API_ADDR":"transactionhistory:8080","TRANSACTIONS_API_ADDR":"ledgerwriter:8080","USERSERVICE_API_ADDR":"userservice:8080"},"name":"service-api-config"}}` | configuration for configmaps |
 | configMaps.demoData.data.DEMO_LOGIN_PASSWORD | string | `"bankofanthos"` | All demo user accounts are hardcoded to use the login password 'bankofanthos' |
 | configMaps.ledgerdb.data.SPRING_DATASOURCE_PASSWORD | string | `"password"` | should match POSTGRES_PASSWORD |
