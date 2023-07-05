@@ -59,4 +59,5 @@ spec:
       volumes:
       {{- toYaml $statefulset.volumes | nindent 10}}
       {{- end }}
+---
 {{- end }}
