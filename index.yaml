@@ -3,6 +3,16 @@ entries:
   bank-of-anthos:
   - apiVersion: v2
     appVersion: 0.5.10
+    created: "2023-07-15T12:58:05.690977297Z"
+    description: A Helm chart for Google's Demo Application Bank of Anthos https://github.com/GoogleCloudPlatform/bank-of-anthos
+    digest: a77a38b4f15b56c51d044eaa0b947de5c23cf3a3634c3de39ec5d3113ada455b
+    name: bank-of-anthos
+    type: application
+    urls:
+    - https://github.com/Feederhigh5/helm/releases/download/bank-of-anthos-0.2.0/bank-of-anthos-0.2.0.tgz
+    version: 0.2.0
+  - apiVersion: v2
+    appVersion: 0.5.10
     created: "2023-07-05T16:54:23.807168222Z"
     description: A Helm chart for Google's Demo Application Bank of Anthos https://github.com/GoogleCloudPlatform/bank-of-anthos
     digest: d2f62763bd3628910637aa8d9bed32d0b62dae101aa08b3921d7cfb2647bbe91
@@ -41,4 +51,4 @@ entries:
     urls:
     - https://github.com/Feederhigh5/helm/releases/download/bank-of-anthos-0.1.0/bank-of-anthos-0.1.0.tgz
     version: 0.1.0
-generated: "2023-07-05T16:54:23.807746932Z"
+generated: "2023-07-15T12:58:05.691006598Z"
