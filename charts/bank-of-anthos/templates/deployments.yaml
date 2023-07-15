@@ -13,6 +13,9 @@ spec:
   {{- if $deployment.replicas }}
   replicas: {{ $deployment.replicas }}
   {{- end }}
+  {{- if $deployment.strategy }}
+  strategy: {{- toYaml $deployment.strategy | nindent 2 }}
+  {{- end }}
   template:
     metadata:
       annotations:
@@ -38,6 +41,10 @@ spec:
           {{- if $deployment.container.securityContext }}
           securityContext:
             {{- toYaml $deployment.container.securityContext  | nindent 12 }}
+          {{- end }}
+          {{- if $deployment.container.lifecycle }}
+          lifecycle:
+            {{- toYaml $deployment.container.lifecycle  | nindent 12 }}
           {{- end }}
           image: {{ $deployment.container.image }}:{{ $.Values.appVersion }}
           {{- if $deployment.container.command }}

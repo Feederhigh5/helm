@@ -933,3 +933,30 @@ configMaps:
       POSTGRES_USER: accounts-admin
       POSTGRES_PASSWORD: accounts-pwd
       ACCOUNTS_DB_URI: postgresql://accounts-admin:accounts-pwd@accounts-db:5432/accounts-db
+
+
+# autoscaler:
+  # userservice:
+  #   name: userservice-cpu-hpa
+  #   spec:
+  #     behavior:
+  #       scaleUp:
+  #         stabilizationWindowSeconds: 0
+  #         policies:
+  #           - type: Percent
+  #             value: 100
+  #             periodSeconds: 5
+  #         selectPolicy: Max
+  #     scaleTargetRef:
+  #       apiVersion: apps/v1
+  #       kind: Deployment
+  #       name: userservice
+  #     minReplicas: 3
+  #     maxReplicas: 15
+  #     metrics:
+  #       - type: Resource
+  #         resource:
+  #           name: cpu
+  #           target:
+  #             type: Utilization
+  #             averageUtilization: 66
