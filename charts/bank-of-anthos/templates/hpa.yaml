@@ -1,0 +1,13 @@
+{{- if .Values.autoscaler }}
+{{- range $hpa := .Values.autoscaler }}
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: {{ $hpa.name }}
+  labels:
+    {{- include "bank-of-anthos.labels" $ | nindent 4 }}
+spec:
+  {{- toYaml $hpa.spec | nindent 2 }}
+---
+{{- end }}
+{{- end }}
