@@ -14,7 +14,7 @@ spec:
   replicas: {{ $deployment.replicas }}
   {{- end }}
   {{- if $deployment.strategy }}
-  strategy: {{- toYaml $deployment.strategy | nindent 2 }}
+  strategy: {{- toYaml $deployment.strategy | nindent 4 }}
   {{- end }}
   template:
     metadata:
